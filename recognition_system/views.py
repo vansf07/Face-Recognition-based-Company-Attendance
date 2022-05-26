@@ -1,4 +1,4 @@
-# from cv2 import VideoCapture
+from cv2 import VideoCapture
 # from django.urls import reverse
 from django.shortcuts import render, redirect
 # from django.contrib.auth.forms import UserCreationForm
@@ -82,7 +82,7 @@ def register(request):
 		form=CustomUserCreationForm(request.POST)
 		if form.is_valid():
 			form.save() ###add user to database
-			messages.success(request, f'Employee registered successfully!')
+			# messages.success(request, f'Employee registered successfully!')
 			id = form.cleaned_data.get('username')
 			return redirect('create_dataset', id=id)
 		else:
@@ -123,9 +123,9 @@ def create_dataset(request, id):
 	directory='training_dataset/{}/'.format(id)
 	detector = dlib.get_frontal_face_detector()
 	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')
-	fa = FaceAligner(predictor , desiredFaceWidth = 96)
+	fa = FaceAligner(predictor , desiredFaceWidth = 256)
 
-	vs = VideoStream(src=0).start()
+	vs = cv2.VideoCapture(0)
 
 	# sampleNum = 0
 	count_image = 0
@@ -135,10 +135,12 @@ def create_dataset(request, id):
 		# grab the frame from the threaded video stream, resize it to
 		# have a maximum width of 400 pixels, and convert it to
 		# grayscale
-		if vs.isOpened() == False:
-			vs = VideoStream(src=0).start()
-		frame = vs.read()
-		frame = imutils.resize(frame ,width = 400)
+		if not vs.isOpened():
+			vs.open(0)
+		(_,frame) = vs.read()
+		# cv2.imshow('',frame)
+		# cv2.waitKey(1)
+		frame = imutils.resize(frame, width = 400)
 
 
 		height, width = frame.shape[:2]
@@ -158,7 +160,7 @@ def create_dataset(request, id):
 			# show image
 			# cv2.imshow(image_name, faceAligned)
 			count_image += 1
-			if count_image > 30:
+			if count_image > 100:
 				# count_image = 0
 				break
 
@@ -170,14 +172,13 @@ def create_dataset(request, id):
 
 		# show the frame
 		cv2.imshow("Frame", frame)
-
 		key = cv2.waitKey(1) & 0xFF
 		# if the `q` key was pressed, break from the loop
 		if key == ord("q"):
 			break
 
 	#Stoping the videostream
-	vs.stop()
+	vs.release()
 	# destroying all the windows
 	cv2.destroyAllWindows()
 	return redirect('dashboard')
@@ -187,6 +188,7 @@ def mark_your_attendance_in(request):
 	EYES_CLOSED_SECONDS = 1
 	closed_count = 0
 	open_count = 0
+
 	webcam = cv2.VideoCapture(0)
 	blink_successful = False
 	# ret, frame = webcam.read(0)
@@ -196,12 +198,13 @@ def mark_your_attendance_in(request):
 
 	# face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
 	process = True
-
 	while True:
-		if webcam.isOpened() == False:
+		if not webcam.isOpened():
 			webcam.open(0)
 		ret, frame = webcam.read(0)
 		time = 0
+		# cv2.imshow('',frame)
+		# cv2.waitKey(1)
 
 		# get it into the correct format
 		small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
@@ -224,9 +227,8 @@ def mark_your_attendance_in(request):
 				thickness = 2
 
 				cv2.rectangle(small_frame, left_eye[0], right_eye[-1], color, thickness)
-
 				cv2.imshow('Please Blink Within 30 Seconds', frame)
-
+				cv2.waitKey(1)
 				ear_left = get_ear(left_eye)
 				ear_right = get_ear(right_eye)
 
@@ -238,7 +240,8 @@ def mark_your_attendance_in(request):
 					closed_count = 0
 					open_count +=1
 		
-
+		cv2.imshow('Please Blink Within 30 Seconds', frame)
+		cv2.waitKey(1)
 		process = not process
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord("q"):
@@ -290,8 +293,6 @@ def mark_your_attendance_in(request):
 
 
 	while True:
-		if webcam.isOpened() == False:
-			webcam = cv2.VideoCapture(0)
 		(_, im) = webcam.read()
 		# print(im.shape)
 		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -305,7 +306,7 @@ def mark_your_attendance_in(request):
 			cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
 			if prediction[1]<500:
-				messages.success(request, f'Employee Recognized Successfully!')
+				# messages.success(request, f'Employee Recognized Successfully!')
 				present[names[prediction[0]]] = True
 				cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
 				cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
@@ -314,10 +315,10 @@ def mark_your_attendance_in(request):
 				(x-10, y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
 
 		cv2.imshow('OpenCV', im)
-
 		if (cv2.waitKey(1)== ord('q')):
 			break
 	# destroying all the windows
+	webcam.release()
 	cv2.destroyAllWindows()
 	update_attendance_in_db_in(present)
 	return redirect('home')
@@ -368,12 +369,12 @@ def mark_your_attendance_out(request):
 
 	# face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
 	process = True
-
 	while True:
-		if webcam.isOpened() == False:
-			webcam = cv2.VideoCapture(0)
+		if not webcam.isOpened():
+			webcam.open(0)
 		ret, frame = webcam.read(0)
-
+		# cv2.imshow('',frame)
+		# cv2.waitKey(1)
 		# get it into the correct format
 		small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 		rgb_small_frame = small_frame[:, :, ::-1]
@@ -397,7 +398,7 @@ def mark_your_attendance_out(request):
 				cv2.rectangle(small_frame, left_eye[0], right_eye[-1], color, thickness)
 
 				cv2.imshow('Please Blink', frame)
-
+				cv2.waitKey(1)
 				ear_left = get_ear(left_eye)
 				ear_right = get_ear(right_eye)
 
@@ -418,7 +419,8 @@ def mark_your_attendance_out(request):
 				# 			asleep = False
 				# 			print("EYES OPENED")
 				# 	closed_count = 0
-
+		cv2.imshow('Please Blink', frame)
+		cv2.waitKey(1)
 		process = not process
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord("q"):
@@ -429,6 +431,7 @@ def mark_your_attendance_out(request):
 			break
 
 		elif open_count>300:
+			webcam.release()
 			cv2.destroyAllWindows()
 			cv2.putText(frame, 'Blink Not Detected!', 
 			(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))			
@@ -438,7 +441,7 @@ def mark_your_attendance_out(request):
 	present = dict()
 
 	# Part 1: Create fisherRecognizer
-	messages.info(request, 'Recognizing Face Please Be in sufficient Lights...')
+	# messages.info(request, 'Recognizing Face Please Be in sufficient Lights...')
 
 	# Create a list of images and a list of corresponding names
 	(images, labels, names, id) = ([], [], {}, 0)
@@ -470,9 +473,8 @@ def mark_your_attendance_out(request):
 
 
 	while True:
-		if webcam.isOpened() == False:
-			webcam.open(0)
 		(_, im) = webcam.read()
+		
 		# print(im.shape)
 		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 		faces = face_cascade.detectMultiScale(gray, 1.3, 5)
@@ -485,7 +487,7 @@ def mark_your_attendance_out(request):
 			cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
 			if prediction[1]<500:
-				messages.success(request, f'Employee Recognized Successfully!')
+				# messages.success(request, f'Employee Recognized Successfully!')
 				present[names[prediction[0]]] = True
 				cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
 				cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
@@ -494,10 +496,10 @@ def mark_your_attendance_out(request):
 				(x-10, y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
 
 		cv2.imshow('OpenCV', im)
-
 		if (cv2.waitKey(1)== ord('q')):
 			break
 	# destroying all the windows
+	webcam.release()
 	cv2.destroyAllWindows()
 	update_attendance_in_db_out(present)
 	return redirect('home')
