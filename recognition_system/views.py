@@ -1,7 +1,4 @@
-from cv2 import VideoCapture
-# from django.urls import reverse
 from django.shortcuts import render, redirect
-# from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from users.forms import CustomUserCreationForm
@@ -10,43 +7,25 @@ from users.models import Profile
 from datetime import datetime
 from django.shortcuts import render
 from users.models import Profile, Present, Time
-# from cgi import print_directory
 from django.shortcuts import render,redirect
 from django.contrib import messages
-from django.contrib.auth.models import User
-# from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
-# from django.http import Http404, HttpResponse,
 from django.http import  HttpResponseRedirect
 import cv2
 import dlib
 import imutils
 from imutils import face_utils
-from imutils.video import VideoStream
-# from imutils.face_utils import rect_to_bb
 from imutils.face_utils import FaceAligner
-# import time
 from attendance.settings import BASE_DIR
 import os
 import face_recognition
-# from face_recognition.face_recognition_cli import image_files_in_folder
-# import pickle
-# from sklearn.preprocessing import LabelEncoder
-# from sklearn.neighbors import KNeighborsClassifier
-# from sklearn.svm import SVC
 import numpy
-from django.contrib.auth.decorators import login_required
 import matplotlib as plt
 plt.use('Agg')
-
-# from sklearn.manifold import TSNE
 import datetime
 from django_pandas.io import read_frame
 from users.models import Present, Time
 import seaborn as sns
 import pandas as pd
-# from django.db.models import Count
-#import mpld3
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 from matplotlib import rcParams
@@ -61,10 +40,13 @@ haar_file = 'face_recognition_data/haarcascade_frontalface_default.xml'
 
 
 # Create your views here.
+
+# home page
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def home(request):
 	return render(request, 'index.html')
 
+# custom logout view
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @login_required(login_url='login')
 def custom_logout(request):
@@ -73,6 +55,7 @@ def custom_logout(request):
 	print(request.user)
 	return HttpResponseRedirect("/")
 
+# register new employee
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @login_required(login_url='login')
 def register(request):
@@ -81,28 +64,27 @@ def register(request):
 	if request.method=='POST':
 		form=CustomUserCreationForm(request.POST)
 		if form.is_valid():
-			form.save() ###add user to database
-			# messages.success(request, f'Employee registered successfully!')
+			form.save() ### add employee to database
 			id = form.cleaned_data.get('username')
 			return redirect('create_dataset', id=id)
 		else:
-			messages.error(request, f'Could not create Employee!')
+			return render(request, 'register.html', {'form' : form})
 
 
 	else:
 		form=CustomUserCreationForm()
 	return render(request, 'register.html', {'form' : form})
 
+# page for unauthorised attempts
 @login_required
 def not_authorised(request):
 	return render(request,'not_authorized.html')
 
 
-# @login_required(login_url='login')(login_url=not_authorised)
+# dashboard
 @cache_control(no_cache=True, must_revalidate=True, no_store=True, )
 @login_required(login_url='login')
 def dashboard(request):
-	# user = request.user
 	if( request.user.username =='admin'):
 		print("admin")
 		total_num_of_emp=total_number_employees()
@@ -184,7 +166,13 @@ def create_dataset(request, id):
 	return redirect('dashboard')
 
 
+
+
 def mark_your_attendance_in(request):
+	# blink_success = check_blink()
+	# if(blink_success!=True):
+	# 	messages.error(request, f'Human Face not Detected')
+	# 	return redirect('home')
 	EYES_CLOSED_SECONDS = 1
 	closed_count = 0
 	open_count = 0
@@ -517,7 +505,6 @@ def update_attendance_in_db_out(present):
 
 
 
-
 def check_validity_times(times_all):
 	if(len(times_all)>0):
 		sign=times_all.first().out
@@ -527,11 +514,11 @@ def check_validity_times(times_all):
 	times_out=times_all.filter(out=True)
 	if(len(times_in)!=len(times_out)):
 		sign=True
-	break_hourss=0
+	new_break_hours=0
 	if(sign==True):
 			check=False
-			break_hourss=0
-			return (check,break_hourss)
+			new_break_hours=0
+			return (check,new_break_hours)
 	prev=True
 	prev_time=times_all.first().time
 
@@ -539,14 +526,14 @@ def check_validity_times(times_all):
 		curr=obj.out
 		if(curr==prev):
 			check=False
-			break_hourss=0
-			return (check,break_hourss)
+			new_break_hours=0
+			return (check,new_break_hours)
 		if(curr==False):
 			curr_time=obj.time
 			to=curr_time
 			ti=prev_time
 			break_time=((to-ti).total_seconds())/3600
-			break_hourss+=break_time
+			new_break_hours+=break_time
 
 
 		else:
@@ -554,7 +541,7 @@ def check_validity_times(times_all):
 
 		prev=curr
 
-	return (True,break_hourss)
+	return (True,new_break_hours)
 
 
 
@@ -564,7 +551,7 @@ def convert_hours_to_hours_mins(hours):
 	hours-=h
 	m=hours*60
 	m=math.ceil(m)
-	return str(str(h)+ " hrs " + str(m) + "  mins")
+	return str(str(h)+ " hr " + str(m) + "  min")
 
 
 
@@ -573,7 +560,6 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 	df_hours=[]
 	df_break_hours=[]
 	qs=present_qs
-
 	for obj in qs:
 		date=obj.date
 		times_in=time_qs.filter(date=date).filter(out=False).order_by('time')
@@ -597,24 +583,26 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 		else:
 			obj.hours=0
 
-		(check,break_hourss)= check_validity_times(times_all)
+		(check,new_break_hours)= check_validity_times(times_all)
 		if check:
-			obj.break_hours=break_hourss
+			obj.break_hours=new_break_hours
 		else:
 			obj.break_hours=0
 
-		df_hours.append(obj.hours)
+		# hours_worked = total_hours - break_hours
+		df_hours.append(obj.hours - obj.break_hours) 	
 		df_break_hours.append(obj.break_hours)
 		obj.hours=convert_hours_to_hours_mins(obj.hours)
 		obj.break_hours=convert_hours_to_hours_mins(obj.break_hours)
 
 	df = read_frame(qs)
-	df["hours"]=df_hours
+	df["Hours Worked"]=df_hours
 	df["break_hours"]=df_break_hours
 	print(df)
 
 	sns.set_palette(sns.light_palette("seagreen"))
-	sns.barplot(data=df,x='date',y='hours')
+	sns.barplot(data=df,x='date',y='Hours Worked')
+	plt.xlabel("Date")
 	plt.xticks(rotation='vertical')
 	rcParams.update({'figure.autolayout': True})
 	plt.tight_layout()
@@ -629,12 +617,14 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 
 
 
-#used
+
 def hours_vs_employee_given_date(present_qs,time_qs):
 	register_matplotlib_converters()
 	df_hours=[]
 	df_break_hours=[]
 	df_username=[]
+	df_name=[]
+	df_department=[]
 	qs=present_qs
 
 	for obj in qs:
@@ -657,32 +647,33 @@ def hours_vs_employee_given_date(present_qs,time_qs):
 			obj.hours=hours
 		else:
 			obj.hours=0
-		(check,break_hourss)= check_validity_times(times_all)
+		(check,new_break_hours)= check_validity_times(times_all)
 		if check:
-			obj.break_hours=break_hourss
+			obj.break_hours=new_break_hours
 
 
 		else:
 			obj.break_hours=0
 
 
-		df_hours.append(obj.hours)
+		df_hours.append(obj.hours - obj.break_hours)
+		df_department.append(user.department)
 		df_username.append(user.username)
+		df_name.append(user.first_name + ' ' + user.last_name)
 		df_break_hours.append(obj.break_hours)
 		obj.hours=convert_hours_to_hours_mins(obj.hours)
 		obj.break_hours=convert_hours_to_hours_mins(obj.break_hours)
 
 
 
-
-
 	df = read_frame(qs)
-	df['hours']=df_hours
-	df['username']=df_username
+	df['Hours Worked']=df_hours
+	df['Employee Name']=df_name
 	df["break_hours"]=df_break_hours
+	df["Department"]=df_department
 
 	sns.set_palette(sns.light_palette("seagreen"))
-	sns.barplot(data=df,x='username',y='hours')
+	sns.barplot(data=df,x='Employee Name',y='Hours Worked')
 	plt.xticks(rotation='vertical')
 	rcParams.update({'figure.autolayout': True})
 	plt.tight_layout()
@@ -690,8 +681,9 @@ def hours_vs_employee_given_date(present_qs,time_qs):
 	plt.close()
 	return qs
 
+
 @cache_control(no_cache=True, must_revalidate=True, no_store=True, )
-# @login_required(login_url='login')
+@login_required(login_url='login')
 def view_attendance_date(request):
 	if request.user.username!='admin':
 		return redirect('not-authorised')
@@ -764,6 +756,7 @@ def view_attendance_employee(request):
 			form=UsernameAndDateForm()
 			return render(request,'attendance_employee.html', {'form' : form, 'qs' :qs})
 
+
 @cache_control(no_cache=True, must_revalidate=True, no_store=True, )
 @login_required(login_url='login')
 def employee_view_attendance(request):
@@ -821,23 +814,20 @@ def get_ear(eye):
 
 
 
-
+# returns total number of employees in company
 def total_number_employees():
 	qs=Profile.objects.all()
+	# -1 to subtract admin
 	return (len(qs) -1)
-	# -1 to account for admin
 
 
-
+# returns employees present today
 def employees_present_today():
 	today=datetime.date.today()
 	qs=Present.objects.filter(date=today).filter(present=True)
 	return len(qs)
 
 
-
-
-#used
 def this_week_emp_count_vs_date():
 	today=datetime.date.today()
 	some_day_last_week=today-datetime.timedelta(days=7)
@@ -849,10 +839,6 @@ def this_week_emp_count_vs_date():
 	str_dates_all=[]
 	emp_cnt_all=[]
 	cnt=0
-
-
-
-
 
 	for obj in qs:
 		date=obj.date
@@ -873,12 +859,6 @@ def this_week_emp_count_vs_date():
 		else:
 			emp_cnt_all.append(0)
 
-
-
-
-
-
-
 	df=pd.DataFrame()
 	df["Date"]=str_dates_all
 	df["Number of employees"]=emp_cnt_all
@@ -894,10 +874,6 @@ def this_week_emp_count_vs_date():
 
 
 
-
-
-
-#used
 def last_week_emp_count_vs_date():
 	today=datetime.date.today()
 	some_day_last_week=today-datetime.timedelta(days=7)
@@ -932,12 +908,6 @@ def last_week_emp_count_vs_date():
 
 		else:
 			emp_cnt_all.append(0)
-
-
-
-
-
-
 
 	df=pd.DataFrame()
 	df["Date"]=str_dates_all

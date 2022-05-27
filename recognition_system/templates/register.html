@@ -72,12 +72,13 @@
                         <form method="POST" id="signUpForm" data-toggle="validator" data-focus="false">
                             {% csrf_token %}
                             {{ form.as_p }}
-                            <div class="form-group">
-                                <button type="submit" class="form-control-submit-button">REGISTER</button>
-                            </div>
                             <div class="form-message">
                                 <div id="smsgSubmit" class="h3 text-center hidden"></div>
                             </div>
+                            <div class="form-group">
+                                <button type="submit" class="form-control-submit-button">REGISTER</button>
+                            </div>
+
                         </form>
                     </div> <!-- end of form container -->
                     <!-- end of sign up form -->

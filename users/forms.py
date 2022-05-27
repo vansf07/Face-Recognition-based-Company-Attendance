@@ -1,4 +1,3 @@
-from django import forms
 from users.models import Profile
 from django.core.exceptions import ValidationError  
 from django.forms.fields import EmailField  
@@ -12,7 +11,7 @@ from django.db import models
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = Profile
-        fields = ['username', 'first_name', 'last_name', 'email', 'location', 'department']
+        fields = ['username', 'first_name', 'last_name', 'email',  'department']
 
 class CustomUserChangeForm(UserChangeForm):
 

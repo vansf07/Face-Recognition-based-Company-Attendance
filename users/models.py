@@ -8,7 +8,7 @@ import datetime
 
 
 class Profile(AbstractUser):
-    location = models.CharField(max_length=15, blank=True)
+    # location = models.CharField(max_length=15, blank=True)
     department = models.CharField(max_length=30)
 
 class Present(models.Model):
