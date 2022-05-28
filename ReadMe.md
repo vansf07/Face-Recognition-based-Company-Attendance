@@ -7,8 +7,7 @@ This project is a company attendance system that uses face attendance to recogni
 
 ## Installing / Getting started
 
-A quick introduction of the minimal setup you need to get a hello world up &
-running.
+A quick introduction of the minimal setup you need to get this project up & running.
 
 The first thing to do is to clone the repository:
 ```shell
