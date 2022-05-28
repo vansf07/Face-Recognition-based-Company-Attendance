@@ -3,7 +3,7 @@
 # Face Recognition based Company Attendance System
 <!-- > Additional information or tagline
  -->
-This project is a company attendance system that uses face attendance to recognize employees and marks their entry and exit time in the database. The system effortlessly tracks time for employees with facial recognition, without human intervention or physical validation, as the system can detect and recognize faces autonomously.
+This project is a company attendance system that uses facial <b>anti-spoofing</b> and recognition to recognize employees and marks their entry and exit time in the database. The system effortlessly tracks time for employees with facial recognition, without human intervention or physical validation, as the system can detect and recognize faces autonomously.
 
 ## Installing / Getting started
 
