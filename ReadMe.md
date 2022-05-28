@@ -46,8 +46,8 @@ password: admin123
 * View weekly statistics like this week's attendance, last week's attendance (through lineplot)
 
 ### Employee
-* Mark attendance in-time on company home page
-* Mark attendance out-time on company homepage
+* Mark attendance in-time on company home page through face recognition
+* Mark attendance out-time on company home page through face recognition
 * View their own attendance (through table and barplot for better comparison)
 
 
