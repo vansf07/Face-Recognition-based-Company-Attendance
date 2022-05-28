@@ -1,3 +1,4 @@
+from cv2 import VideoCapture
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,6 +11,8 @@ from users.models import Profile, Present, Time
 from django.shortcuts import render,redirect
 from django.contrib import messages
 from django.http import  HttpResponseRedirect
+import sys
+sys.path.append('/usr/local/lib/python3.8/site-packages')
 import cv2
 import dlib
 import imutils
@@ -107,7 +110,7 @@ def create_dataset(request, id):
 	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')
 	fa = FaceAligner(predictor , desiredFaceWidth = 256)
 
-	vs = cv2.VideoCapture(0)
+	vs = cv2.VideoCapture(1)
 
 	# sampleNum = 0
 	count_image = 0
@@ -119,50 +122,53 @@ def create_dataset(request, id):
 		# grayscale
 		if not vs.isOpened():
 			vs.open(0)
-		(_,frame) = vs.read()
+		(ret,frame) = vs.read()
 		# cv2.imshow('',frame)
 		# cv2.waitKey(1)
 		frame = imutils.resize(frame, width = 400)
+		if ret == False:
+			webcam = cv2.VideoCapture(0)
+			continue
+		if ret== True:
+			height, width = frame.shape[:2]
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+			# detect faces in the grayayscale frame
+			rects = detector(gray, 0)
+			# detect faces in the grayscale frame
+			# faces = detector(gray,0)
+			# faces_num = len(faces)
+
+			if len(rects) > 0:
+				faceAligned = fa.align(frame, gray, rects[0])
+				image_name = directory + str(count_image) + ".jpg"
+				# save image
+				cv2.imwrite(image_name, faceAligned)
+				# show image
+				# cv2.imshow(image_name, faceAligned)
+				count_image += 1
+				if count_image > 100:
+					# count_image = 0
+					break
 
 
-		height, width = frame.shape[:2]
-		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			# loop over the face detections
+			for rect in rects:
+				(x,y,w,h) = face_utils.rect_to_bb(rect)
+				cv2.rectangle(frame, (x, y), (x+w, y+h), (0,0,255), 1)
 
-		# detect faces in the grayayscale frame
-		rects = detector(gray, 0)
-		# detect faces in the grayscale frame
-		# faces = detector(gray,0)
-		# faces_num = len(faces)
-
-		if len(rects) > 0:
-			faceAligned = fa.align(frame, gray, rects[0])
-			image_name = directory + str(count_image) + ".jpg"
-			# save image
-			cv2.imwrite(image_name, faceAligned)
-			# show image
-			# cv2.imshow(image_name, faceAligned)
-			count_image += 1
-			if count_image > 100:
-				# count_image = 0
+			# show the frame
+			cv2.imshow("Frame", frame)
+			key = cv2.waitKey(1) & 0xFF
+			# if the `q` key was pressed, break from the loop
+			if key == ord("q"):
 				break
-
-
-		# loop over the face detections
-		for rect in rects:
-			(x,y,w,h) = face_utils.rect_to_bb(rect)
-			cv2.rectangle(frame, (x, y), (x+w, y+h), (0,0,255), 1)
-
-		# show the frame
-		cv2.imshow("Frame", frame)
-		key = cv2.waitKey(1) & 0xFF
-		# if the `q` key was pressed, break from the loop
-		if key == ord("q"):
-			break
 
 	#Stoping the videostream
 	vs.release()
 	# destroying all the windows
 	cv2.destroyAllWindows()
+	cv2.waitKey(1)
 	return redirect('dashboard')
 
 
@@ -177,8 +183,7 @@ def mark_your_attendance_in(request):
 	closed_count = 0
 	open_count = 0
 
-	webcam = cv2.VideoCapture(0)
-	blink_successful = False
+	webcam = VideoCapture(0)
 	# ret, frame = webcam.read(0)
 	# cv2.VideoCapture.release()
 	# small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
@@ -191,60 +196,66 @@ def mark_your_attendance_in(request):
 			webcam.open(0)
 		ret, frame = webcam.read(0)
 		time = 0
-		# cv2.imshow('',frame)
-		# cv2.waitKey(1)
 
-		# get it into the correct format
-		small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-		rgb_small_frame = small_frame[:, :, ::-1]
-
-
-
-		# get the correct face landmarks
-
-		if process:
-			face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
-
-			# get eyes
-			for face_landmark in face_landmarks_list:
-				left_eye = face_landmark['left_eye']
-				right_eye = face_landmark['right_eye']
+		if ret == False:
+			webcam = cv2.VideoCapture(0)
+			continue
+		if ret == True:
+			# get it into the correct format
+			small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+			rgb_small_frame = small_frame[:, :, ::-1]
 
 
-				color = (255,0,0)
-				thickness = 2
 
-				cv2.rectangle(small_frame, left_eye[0], right_eye[-1], color, thickness)
-				cv2.imshow('Please Blink Within 30 Seconds', frame)
+			# get the correct face landmarks
+
+			if process:
+				face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
+
+				# get eyes
+				for face_landmark in face_landmarks_list:
+					left_eye = face_landmark['left_eye']
+					right_eye = face_landmark['right_eye']
+
+
+					color = (255,0,0)
+					thickness = 2
+
+					cv2.rectangle(small_frame, left_eye[0], right_eye[-1], color, thickness)
+					cv2.imshow('Please Blink Within 30 Seconds', frame)
+
+					cv2.waitKey(1)
+					ear_left = get_ear(left_eye)
+					ear_right = get_ear(right_eye)
+
+					closed = ear_left < 0.2 and ear_right < 0.2
+
+					if (closed):
+						closed_count += 1
+					else:
+						closed_count = 0
+						open_count +=1
+			
+			cv2.imshow('Please Blink Within 30 Seconds', frame)
+			cv2.waitKey(1)
+			process = not process
+			key = cv2.waitKey(1) & 0xFF
+			if key == ord("q"):
+				break
+			if (closed_count>=1):
+				cv2.putText(frame, 'Blink Successful', 
+				(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
+				break
+
+			elif open_count>300:
+				cv2.destroyAllWindows()
 				cv2.waitKey(1)
-				ear_left = get_ear(left_eye)
-				ear_right = get_ear(right_eye)
 
-				closed = ear_left < 0.2 and ear_right < 0.2
-
-				if (closed):
-					closed_count += 1
-				else:
-					closed_count = 0
-					open_count +=1
-		
-		cv2.imshow('Please Blink Within 30 Seconds', frame)
-		cv2.waitKey(1)
-		process = not process
-		key = cv2.waitKey(1) & 0xFF
-		if key == ord("q"):
-			break
-		if (closed_count>=1):
-			cv2.putText(frame, 'Blink Successful', 
-			(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
-			break
-
-		elif open_count>300:
-			cv2.destroyAllWindows()
-			cv2.putText(frame, 'Blink Not Detected!', 
-			(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))			
-			return redirect('home')
-
+				cv2.putText(frame, 'Blink Not Detected!', 
+				(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))			
+				return redirect('home')
+		else:
+			print('Could not open webcam. Please restart app')
 
 	present = dict()
 
@@ -283,31 +294,33 @@ def mark_your_attendance_in(request):
 	while True:
 		(_, im) = webcam.read()
 		# print(im.shape)
-		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-		faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-		for (x, y, w, h) in faces:
-			cv2.rectangle(im, (x, y), (x + w, y + h), (255, 0, 0), 2)
-			face = gray[y:y + h, x:x + w]
-			face_resize = cv2.resize(face, (width, height))
-			# Try to recognize the face
-			prediction = model.predict(face_resize)
-			cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
+		if _ == True:
+			gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+			faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+			for (x, y, w, h) in faces:
+				cv2.rectangle(im, (x, y), (x + w, y + h), (255, 0, 0), 2)
+				face = gray[y:y + h, x:x + w]
+				face_resize = cv2.resize(face, (width, height))
+				# Try to recognize the face
+				prediction = model.predict(face_resize)
+				cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
-			if prediction[1]<500:
-				# messages.success(request, f'Employee Recognized Successfully!')
-				present[names[prediction[0]]] = True
-				cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
-				cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
-			else:
-				cv2.putText(im, 'not recognized',
-				(x-10, y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
+				if prediction[1]<500:
+					# messages.success(request, f'Employee Recognized Successfully!')
+					present[names[prediction[0]]] = True
+					cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
+					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
+				else:
+					cv2.putText(im, 'not recognized',
+					(x-10, y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
 
-		cv2.imshow('OpenCV', im)
-		if (cv2.waitKey(1)== ord('q')):
-			break
+			cv2.imshow('OpenCV', im)
+			if (cv2.waitKey(1)== ord('q')):
+				break
 	# destroying all the windows
 	webcam.release()
 	cv2.destroyAllWindows()
+	cv2.waitKey(1)
 	update_attendance_in_db_in(present)
 	return redirect('home')
 
@@ -348,7 +361,7 @@ def mark_your_attendance_out(request):
 	closed_count = 0
 	open_count = 0
 
-	webcam = cv2.VideoCapture(0)
+	webcam = cv2.VideoCapture(1)
 	blink_successful = False
 	# ret, frame = webcam.read(0)
 	# cv2.VideoCapture.release()
@@ -361,70 +374,72 @@ def mark_your_attendance_out(request):
 		if not webcam.isOpened():
 			webcam.open(0)
 		ret, frame = webcam.read(0)
-		# cv2.imshow('',frame)
-		# cv2.waitKey(1)
-		# get it into the correct format
-		small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-		rgb_small_frame = small_frame[:, :, ::-1]
+		if ret == False:
+			webcam = cv2.VideoCapture(1)
+			continue
+		if ret == True:
+			# cv2.imshow('',frame)
+			# cv2.waitKey(1)
+			# get it into the correct format
+			small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+			rgb_small_frame = small_frame[:, :, ::-1]
 
 
 
-		# get the correct face landmarks
+			# get the correct face landmarks
 
-		if process:
-			face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
+			if process:
+				face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
 
-			# get eyes
-			for face_landmark in face_landmarks_list:
-				left_eye = face_landmark['left_eye']
-				right_eye = face_landmark['right_eye']
+				# get eyes
+				for face_landmark in face_landmarks_list:
+					left_eye = face_landmark['left_eye']
+					right_eye = face_landmark['right_eye']
+					color = (255,0,0)
+					thickness = 2
+					cv2.rectangle(small_frame, left_eye[0], right_eye[-1], color, thickness)
+					cv2.imshow('Please Blink', frame)
+					cv2.waitKey(1)
+					ear_left = get_ear(left_eye)
+					ear_right = get_ear(right_eye)
 
+					closed = ear_left < 0.2 and ear_right < 0.2
 
-				color = (255,0,0)
-				thickness = 2
+					if (closed):
+						closed_count += 1
+					else:
+						closed_count = 0
+						open_count += 1
 
-				cv2.rectangle(small_frame, left_eye[0], right_eye[-1], color, thickness)
+					# if (closed_count >= EYES_CLOSED_SECONDS):
+					# 	asleep = True
+					# 	while (asleep): #continue this loop until they wake up and acknowledge music
+					# 		print("EYES CLOSED")
 
-				cv2.imshow('Please Blink', frame)
+					# 		if cv2.waitKey(1) == 32: #Wait for space key
+					# 			asleep = False
+					# 			print("EYES OPENED")
+					# 	closed_count = 0
+			cv2.imshow('Please Blink', frame)
+			cv2.waitKey(1)
+			process = not process
+			key = cv2.waitKey(1) & 0xFF
+			if key == ord("q"):
+				break
+			if (closed_count>=1):
+				cv2.putText(frame, 'Blink Successful', 
+				(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
+				break
+
+			elif open_count>300:
+				webcam.release()
+				cv2.destroyAllWindows()
 				cv2.waitKey(1)
-				ear_left = get_ear(left_eye)
-				ear_right = get_ear(right_eye)
-
-				closed = ear_left < 0.2 and ear_right < 0.2
-
-				if (closed):
-					closed_count += 1
-				else:
-					closed_count = 0
-					open_count += 1
-
-				# if (closed_count >= EYES_CLOSED_SECONDS):
-				# 	asleep = True
-				# 	while (asleep): #continue this loop until they wake up and acknowledge music
-				# 		print("EYES CLOSED")
-
-				# 		if cv2.waitKey(1) == 32: #Wait for space key
-				# 			asleep = False
-				# 			print("EYES OPENED")
-				# 	closed_count = 0
-		cv2.imshow('Please Blink', frame)
-		cv2.waitKey(1)
-		process = not process
-		key = cv2.waitKey(1) & 0xFF
-		if key == ord("q"):
-			break
-		if (closed_count>=1):
-			cv2.putText(frame, 'Blink Successful', 
-			(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
-			break
-
-		elif open_count>300:
-			webcam.release()
-			cv2.destroyAllWindows()
-			cv2.putText(frame, 'Blink Not Detected!', 
-			(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))			
-			return redirect('home')
-
+				cv2.putText(frame, 'Blink Not Detected!', 
+				(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))			
+				return redirect('home')
+		else:
+			print('Could not open webcam! Please restart app')
 
 	present = dict()
 
@@ -462,33 +477,35 @@ def mark_your_attendance_out(request):
 
 	while True:
 		(_, im) = webcam.read()
-		
-		# print(im.shape)
-		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-		faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-		for (x, y, w, h) in faces:
-			cv2.rectangle(im, (x, y), (x + w, y + h), (255, 0, 0), 2)
-			face = gray[y:y + h, x:x + w]
-			face_resize = cv2.resize(face, (width, height))
-			# Try to recognize the face
-			prediction = model.predict(face_resize)
-			cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
+			
+			# print(im.shape)
+		if _ == True:
+			gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+			faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+			for (x, y, w, h) in faces:
+				cv2.rectangle(im, (x, y), (x + w, y + h), (255, 0, 0), 2)
+				face = gray[y:y + h, x:x + w]
+				face_resize = cv2.resize(face, (width, height))
+				# Try to recognize the face
+				prediction = model.predict(face_resize)
+				cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
-			if prediction[1]<500:
-				# messages.success(request, f'Employee Recognized Successfully!')
-				present[names[prediction[0]]] = True
-				cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
-				cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
-			else:
-				cv2.putText(im, 'not recognized',
-				(x-10, y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
+				if prediction[1]<500:
+					# messages.success(request, f'Employee Recognized Successfully!')
+					present[names[prediction[0]]] = True
+					cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
+					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
+				else:
+					cv2.putText(im, 'not recognized',
+					(x-10, y-10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
 
-		cv2.imshow('OpenCV', im)
-		if (cv2.waitKey(1)== ord('q')):
-			break
+			cv2.imshow('OpenCV', im)
+			if (cv2.waitKey(1)== ord('q')):
+				break
 	# destroying all the windows
 	webcam.release()
 	cv2.destroyAllWindows()
+	cv2.waitKey(1)
 	update_attendance_in_db_out(present)
 	return redirect('home')
 
