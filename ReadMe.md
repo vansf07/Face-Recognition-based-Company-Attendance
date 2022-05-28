@@ -64,7 +64,8 @@ The anti-spoofing system uses the challenge-response method where an attack can 
 * <b>Django</b>: I used Django for the backend. The reason I chose Django is because of its ‘batteries included’ approach, which means that essentials like authentication, admin interfacing and managing temporary messages have all been included in the framework.
 * <b>Bootstrap</b>: For the Front-end I’ve used Bootstrap to make my web application <b>responsive</b> and easy to navigate. 
 * <b>OpenCV</b>: For the face recognition system itself, I have used Haar and LBPH. Face is detected using Haar Cascade, which is one of OpenCV’s most popular object detection algorithms and one of its main benefits is its speed.  
-For face recognition, I’ve used LBPH, also provided by OpenCV through which it is possible to get great results because it is robust against monotonic grayscale transformations. 
+For face recognition, I’ve used LBPH, also provided by OpenCV through which it is possible to get great results because it is robust against monotonic grayscale transformations.  
+Note: OpenCV may freeze due to compatibility isses with Linux but restarting the app will resolve the issue. 
 * <b>dlib</b>: dlib is a C++ library with python bindings used to detect the face while adding a newly registered employee's photos to the training dataset. 
 * <b>Matplotlib, Pandas, Numpy, Seaborn, Scipy</b>:  used for depicting employee attendance through tables, barplots as well as lineplots.
 
