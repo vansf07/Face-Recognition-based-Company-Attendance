@@ -1,4 +1,5 @@
-![Logo of the project](https://raw.githubusercontent.com/jehna/readme-best-practices/master/sample-logo.png)
+<img src="/recognition_system/static/images/home.png" alt="drawing" width="200"/>
+
 
 # Face Recognition based Company Attendance System
 <!-- > Additional information or tagline
