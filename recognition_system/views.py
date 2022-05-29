@@ -100,6 +100,8 @@ def dashboard(request):
 		print("not admin")
 		return render(request,'employee_dashboard.html')
 
+
+# create dataset for newly registered employee
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @login_required(login_url='login')
 def create_dataset(request, id):
@@ -117,14 +119,12 @@ def create_dataset(request, id):
 
 	# loop over the frames in the video stream
 	while(True):
+		if not vs.isOpened():
+			vs.open(0)
 		# grab the frame from the threaded video stream, resize it to
 		# have a maximum width of 400 pixels, and convert it to
 		# grayscale
-		if not vs.isOpened():
-			vs.open(0)
 		(ret,frame) = vs.read()
-		# cv2.imshow('',frame)
-		# cv2.waitKey(1)
 		frame = imutils.resize(frame, width = 400)
 		if ret == False:
 			webcam = cv2.VideoCapture(0)
@@ -135,20 +135,13 @@ def create_dataset(request, id):
 
 			# detect faces in the grayayscale frame
 			rects = detector(gray, 0)
-			# detect faces in the grayscale frame
-			# faces = detector(gray,0)
-			# faces_num = len(faces)
-
 			if len(rects) > 0:
 				faceAligned = fa.align(frame, gray, rects[0])
 				image_name = directory + str(count_image) + ".jpg"
 				# save image
 				cv2.imwrite(image_name, faceAligned)
-				# show image
-				# cv2.imshow(image_name, faceAligned)
 				count_image += 1
 				if count_image > 100:
-					# count_image = 0
 					break
 
 
@@ -173,23 +166,14 @@ def create_dataset(request, id):
 
 
 
-
+# mark attendance entry time
 def mark_your_attendance_in(request):
-	# blink_success = check_blink()
-	# if(blink_success!=True):
-	# 	messages.error(request, f'Human Face not Detected')
-	# 	return redirect('home')
 	EYES_CLOSED_SECONDS = 1
 	closed_count = 0
 	open_count = 0
 
 	webcam = VideoCapture(0)
-	# ret, frame = webcam.read(0)
-	# cv2.VideoCapture.release()
-	# small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-	# rgb_small_frame = small_frame[:, :, ::-1]
-
-	# face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
+	# check for blink
 	process = True
 	while True:
 		if not webcam.isOpened():
@@ -204,8 +188,6 @@ def mark_your_attendance_in(request):
 			# get it into the correct format
 			small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 			rgb_small_frame = small_frame[:, :, ::-1]
-
-
 
 			# get the correct face landmarks
 
@@ -242,11 +224,14 @@ def mark_your_attendance_in(request):
 			key = cv2.waitKey(1) & 0xFF
 			if key == ord("q"):
 				break
+
+			# if blink is detected
 			if (closed_count>=1):
 				cv2.putText(frame, 'Blink Successful', 
 				(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
 				break
-
+			
+			# if blink not detected, refresh page
 			elif open_count>300:
 				cv2.destroyAllWindows()
 				cv2.waitKey(1)
@@ -257,6 +242,8 @@ def mark_your_attendance_in(request):
 		else:
 			print('Could not open webcam. Please restart app')
 
+
+	# recognizing face if blink successful
 	present = dict()
 
 	print('Recognizing Face Please Be in sufficient Lights...')
@@ -280,20 +267,14 @@ def mark_your_attendance_in(request):
 	(images, labels) = [numpy.array(lis) for lis in [images, labels]]
 
 	# OpenCV trains a model from the images
-	# NOTE FOR OpenCV2: remove '.face'
 	model = cv2.face.LBPHFaceRecognizer_create()
 	model.train(images, labels)
 	
-	# Part 2: Use fisherRecognizer on camera stream
+	# Part 2: Use Haar Cascade Classifier on camera stream
 	face_cascade = cv2.CascadeClassifier(haar_file)
-	faces_encodings = numpy.zeros((1,128))
-
-	# webcam = cv2.VideoCapture(0)
-
 
 	while True:
 		(_, im) = webcam.read()
-		# print(im.shape)
 		if _ == True:
 			gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 			faces = face_cascade.detectMultiScale(gray, 1.3, 5)
@@ -304,9 +285,8 @@ def mark_your_attendance_in(request):
 				# Try to recognize the face
 				prediction = model.predict(face_resize)
 				cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
-
+				# if employee recognized
 				if prediction[1]<500:
-					# messages.success(request, f'Employee Recognized Successfully!')
 					present[names[prediction[0]]] = True
 					cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
 					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
@@ -324,18 +304,19 @@ def mark_your_attendance_in(request):
 	update_attendance_in_db_in(present)
 	return redirect('home')
 
-
+# updating entry attendance in database
 def update_attendance_in_db_in(present):
 	today=datetime.date.today()
 	time=datetime.datetime.now()
 	for person in present:
-		print(person, ' ', present[person])
 		user=Profile.objects.get(username=person)
+		# if person is present today
 		try:
 			qs=Present.objects.get(user=user,date=today)
 		except:
 			qs= None
-
+		# if person is marking attendance for the first time today,
+		# mark them as present if present, and absent if not
 		if qs is None:
 			if present[person]==True:
 						a=Present(user=user,date=today,present=True)
@@ -343,6 +324,7 @@ def update_attendance_in_db_in(present):
 			else:
 				a=Present(user=user,date=today,present=False)
 				a.save()
+		# if person is present today, update their in-time
 		else:
 			if present[person]==True:
 				qs.present=True
@@ -351,40 +333,28 @@ def update_attendance_in_db_in(present):
 			a=Time(user=user,date=today,time=time, out=False)
 			a.save()
 
-
+# mark exit attendance
 def mark_your_attendance_out(request):
-	# blink_success = check_blink()
-	# if(blink_success!=True):
-	# 	messages.error(request, f'Human Face not Detected')
-	# 	return redirect('home')
 	EYES_CLOSED_SECONDS = 1
 	closed_count = 0
 	open_count = 0
 
 	webcam = cv2.VideoCapture(1)
-	blink_successful = False
-	# ret, frame = webcam.read(0)
-	# cv2.VideoCapture.release()
-	# small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-	# rgb_small_frame = small_frame[:, :, ::-1]
-
-	# face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame)
+	# check for blinking
 	process = True
 	while True:
 		if not webcam.isOpened():
 			webcam.open(0)
 		ret, frame = webcam.read(0)
+		# if webcam not opened
 		if ret == False:
 			webcam = cv2.VideoCapture(1)
 			continue
+		# if webcam opened successfully
 		if ret == True:
-			# cv2.imshow('',frame)
-			# cv2.waitKey(1)
-			# get it into the correct format
+			# resize frame
 			small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 			rgb_small_frame = small_frame[:, :, ::-1]
-
-
 
 			# get the correct face landmarks
 
@@ -411,26 +381,18 @@ def mark_your_attendance_out(request):
 						closed_count = 0
 						open_count += 1
 
-					# if (closed_count >= EYES_CLOSED_SECONDS):
-					# 	asleep = True
-					# 	while (asleep): #continue this loop until they wake up and acknowledge music
-					# 		print("EYES CLOSED")
-
-					# 		if cv2.waitKey(1) == 32: #Wait for space key
-					# 			asleep = False
-					# 			print("EYES OPENED")
-					# 	closed_count = 0
 			cv2.imshow('Please Blink', frame)
 			cv2.waitKey(1)
 			process = not process
 			key = cv2.waitKey(1) & 0xFF
 			if key == ord("q"):
 				break
+			# if blink was detected
 			if (closed_count>=1):
 				cv2.putText(frame, 'Blink Successful', 
 				(50,50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
 				break
-
+			# if blink not detected
 			elif open_count>300:
 				webcam.release()
 				cv2.destroyAllWindows()
@@ -441,12 +403,9 @@ def mark_your_attendance_out(request):
 		else:
 			print('Could not open webcam! Please restart app')
 
+	# Recognizing faces
 	present = dict()
 
-	# Part 1: Create fisherRecognizer
-	# messages.info(request, 'Recognizing Face Please Be in sufficient Lights...')
-
-	# Create a list of images and a list of corresponding names
 	(images, labels, names, id) = ([], [], {}, 0)
 	for (subdirs, dirs, files) in os.walk(datasets):
 		for subdir in dirs:
@@ -465,20 +424,15 @@ def mark_your_attendance_out(request):
 	(images, labels) = [numpy.array(lis) for lis in [images, labels]]
 
 	# OpenCV trains a model from the images
-	# NOTE FOR OpenCV2: remove '.face'
 	model = cv2.face.LBPHFaceRecognizer_create()
 	model.train(images, labels)
-	# Part 2: Use fisherRecognizer on camera stream
+
+	# Part 2: Use Haar Cascade Classifier on camera stream
 	face_cascade = cv2.CascadeClassifier(haar_file)
-	faces_encodings = numpy.zeros((1,128))
-
-	# webcam = cv2.VideoCapture(0)
-
 
 	while True:
 		(_, im) = webcam.read()
 			
-			# print(im.shape)
 		if _ == True:
 			gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 			faces = face_cascade.detectMultiScale(gray, 1.3, 5)
@@ -489,9 +443,8 @@ def mark_your_attendance_out(request):
 				# Try to recognize the face
 				prediction = model.predict(face_resize)
 				cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 3)
-
+				# if employee recognized
 				if prediction[1]<500:
-					# messages.success(request, f'Employee Recognized Successfully!')
 					present[names[prediction[0]]] = True
 					cv2.putText(im, '% s - %.0f' % (names[prediction[0]], prediction[1]), (x-10, y-10),
 					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0))
@@ -509,7 +462,7 @@ def mark_your_attendance_out(request):
 	update_attendance_in_db_out(present)
 	return redirect('home')
 
-
+# update exit attendance in database
 def update_attendance_in_db_out(present):
 	today=datetime.date.today()
 	time=datetime.datetime.now()
@@ -518,8 +471,6 @@ def update_attendance_in_db_out(present):
 		if present[person]==True:
 			a=Time(user=user,date=today,time=time, out=True)
 			a.save()
-
-
 
 
 def check_validity_times(times_all):
@@ -760,7 +711,6 @@ def view_attendance_employee(request):
 						qs=hours_vs_date_given_employee(present_qs,time_qs,admin=True)
 						return render(request,'attendance_employee.html', {'form' : form, 'qs' :qs})
 					else:
-						#print("inside qs is None")
 						messages.warning(request, f'No records for selected duration.')
 						return redirect('view_attendance_employee')
 			else:
