@@ -8,7 +8,7 @@ This project is a company attendance system that uses <b>facial anti-spoofing</b
 
 ## Getting started
 
-A quick introduction of the minimal setup you need to get this project up & running in a <b>Linux environemnt</b>.
+A quick introduction of the minimal setup you need to get this project up & running in a <b>Linux environment</b>.
 
 The first thing to do is to clone the repository:
 ```shell
@@ -53,7 +53,7 @@ password: rWN7fZ4R
 * View their own attendance (through table and barplot for better comparison)
 
 
-## Implementation!
+## Implementation
 [Flowchart](https://user-images.githubusercontent.com/75719373/170851759-29924808-e721-40f8-a3f2-816b1c2ebb71.png) 
 
 ### Facial Anti-Spoofing
