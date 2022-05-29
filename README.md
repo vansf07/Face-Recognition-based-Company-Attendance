@@ -13,7 +13,7 @@ A quick introduction of the minimal setup you need to get this project up & runn
 The first thing to do is to clone the repository:
 ```shell
 git clone https://github.com/vansf07/Face-Recognition-based-Company-Attendance.git
-cd ace-Recognition-based-Company-Attendance
+cd Face-Recognition-based-Company-Attendance
 ```
 Create a virtual environment to install dependencies in and activate it:
 ```shell
