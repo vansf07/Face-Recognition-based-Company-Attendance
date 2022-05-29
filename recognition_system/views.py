@@ -615,8 +615,6 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 	df = read_frame(qs)
 	df["Hours Worked"]=df_hours
 	df["break_hours"]=df_break_hours
-	print(df)
-
 	sns.set_palette(sns.light_palette("seagreen"))
 	sns.barplot(data=df,x='date',y='Hours Worked')
 	plt.xlabel("Date")
