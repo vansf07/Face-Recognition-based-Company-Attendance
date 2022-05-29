@@ -120,7 +120,7 @@ def create_dataset(request, id):
 	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')
 	fa = FaceAligner(predictor , desiredFaceWidth = 256)
 
-	vs = cv2.VideoCapture(1)
+	vs = cv2.VideoCapture(0)
 
 	# sampleNum = 0
 	count_image = 0
@@ -182,7 +182,7 @@ def mark_your_attendance_in(request):
 	closed_count = 0
 	open_count = 0
 
-	webcam = VideoCapture(0)
+	webcam = VideoCapture(1)
 	# check for blink
 	process = True
 	while True:
@@ -355,7 +355,7 @@ def mark_your_attendance_out(request):
 	closed_count = 0
 	open_count = 0
 
-	webcam = cv2.VideoCapture(1)
+	webcam = cv2.VideoCapture(0)
 	# check for blinking
 	process = True
 	while True:
