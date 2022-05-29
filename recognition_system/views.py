@@ -49,6 +49,7 @@ haar_file = 'face_recognition_data/haarcascade_frontalface_default.xml'
 def home(request):
 	return render(request, 'index.html')
 
+
 # custom logout view
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @login_required(login_url='login')
@@ -57,6 +58,7 @@ def custom_logout(request):
 	logout(request)
 	print(request.user)
 	return HttpResponseRedirect("/")
+
 
 # register new employee
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
@@ -78,10 +80,14 @@ def register(request):
 		form=CustomUserCreationForm()
 	return render(request, 'register.html', {'form' : form})
 
+
+
 # page for unauthorised attempts
 @login_required
 def not_authorised(request):
 	return render(request,'not_authorized.html')
+
+
 
 
 # dashboard
@@ -99,6 +105,8 @@ def dashboard(request):
 	else:
 		print("not admin")
 		return render(request,'employee_dashboard.html')
+
+
 
 
 # create dataset for newly registered employee
@@ -163,6 +171,8 @@ def create_dataset(request, id):
 	cv2.destroyAllWindows()
 	cv2.waitKey(1)
 	return redirect('dashboard')
+
+
 
 
 
@@ -304,6 +314,9 @@ def mark_your_attendance_in(request):
 	update_attendance_in_db_in(present)
 	return redirect('home')
 
+
+
+
 # updating entry attendance in database
 def update_attendance_in_db_in(present):
 	today=datetime.date.today()
@@ -332,6 +345,9 @@ def update_attendance_in_db_in(present):
 		if present[person]==True:
 			a=Time(user=user,date=today,time=time, out=False)
 			a.save()
+
+
+
 
 # mark exit attendance
 def mark_your_attendance_out(request):
@@ -462,6 +478,9 @@ def mark_your_attendance_out(request):
 	update_attendance_in_db_out(present)
 	return redirect('home')
 
+
+
+
 # update exit attendance in database
 def update_attendance_in_db_out(present):
 	today=datetime.date.today()
@@ -471,6 +490,7 @@ def update_attendance_in_db_out(present):
 		if present[person]==True:
 			a=Time(user=user,date=today,time=time, out=True)
 			a.save()
+
 
 
 def check_validity_times(times_all):
@@ -648,6 +668,7 @@ def hours_vs_employee_given_date(present_qs,time_qs):
 	return qs
 
 
+
 @cache_control(no_cache=True, must_revalidate=True, no_store=True, )
 @login_required(login_url='login')
 def view_attendance_date(request):
@@ -675,6 +696,7 @@ def view_attendance_date(request):
 	else:
 			form=DateForm()
 			return render(request,'attendance_date.html', {'form' : form, 'qs' : qs})
+
 
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True, )
@@ -722,6 +744,8 @@ def view_attendance_employee(request):
 			return render(request,'attendance_employee.html', {'form' : form, 'qs' :qs})
 
 
+
+
 @cache_control(no_cache=True, must_revalidate=True, no_store=True, )
 @login_required(login_url='login')
 def employee_view_attendance(request):
@@ -757,6 +781,7 @@ def employee_view_attendance(request):
 
 			form=DateForm_2()
 			return render(request,'employee_view_attendance.html', {'form' : form, 'qs' :qs})
+
 
 
 
