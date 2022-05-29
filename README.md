@@ -6,9 +6,9 @@
  -->
 This project is a company attendance system that uses <b>facial anti-spoofing</b> and <b>recognition</b> to recognize employees and marks their entry and exit time in the database. The system effortlessly tracks time for employees with facial recognition, without human intervention or physical validation, as the system can detect and recognize faces autonomously.
 
-## Installing / Getting started
+## Getting started
 
-A quick introduction of the minimal setup you need to get this project up & running.
+A quick introduction of the minimal setup you need to get this project up & running in a <b>Linux environemnt</b>.
 
 The first thing to do is to clone the repository:
 ```shell
