@@ -72,6 +72,8 @@ Note: OpenCV may freeze due to compatibility isses with Linux but restarting the
 
 ### Home page
 ![image](https://user-images.githubusercontent.com/75719373/170852010-60950903-b0d1-4827-8e1d-2f004b66abbc.png)
+### Mark Attendance
+![final_62924531a98839005a22e8fa_894383](https://user-images.githubusercontent.com/75719373/170853298-954f892e-ba00-4253-82a0-6447613cbacd.gif)
 ### Log In
 ![image](https://user-images.githubusercontent.com/75719373/170852026-e8aa903a-9d44-48ed-8ebb-d01cbe501e69.png)
 ### Admin Dashboard
@@ -79,5 +81,4 @@ Note: OpenCV may freeze due to compatibility isses with Linux but restarting the
 ### Register New Employee![final_6292451345b22b00e6e7ba2b_808322](https://user-images.githubusercontent.com/75719373/170852302-77732d30-ee09-42ca-82ae-de41bf7b989a.gif)
 ### View Attendance
 ![final_6292451345b22b00e6e7ba2b_994273](https://user-images.githubusercontent.com/75719373/170853290-9d03cbed-d324-4176-a703-0d3e07853767.gif)
-### Mark Attendance
-![final_62924531a98839005a22e8fa_894383](https://user-images.githubusercontent.com/75719373/170853298-954f892e-ba00-4253-82a0-6447613cbacd.gif)
+
