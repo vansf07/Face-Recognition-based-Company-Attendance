@@ -34,7 +34,7 @@ And navigate to http://127.0.0.1:8000/.
 ## Admin Login
 ```bash
 username: admin
-password: &\9b$2X%
+password: rWN7fZ4R
 ```
 
 
@@ -81,4 +81,6 @@ Note: OpenCV may freeze due to compatibility isses with Linux but restarting the
 ### Register New Employee![final_6292451345b22b00e6e7ba2b_808322](https://user-images.githubusercontent.com/75719373/170852302-77732d30-ee09-42ca-82ae-de41bf7b989a.gif)
 ### View Attendance
 ![final_6292451345b22b00e6e7ba2b_994273](https://user-images.githubusercontent.com/75719373/170853290-9d03cbed-d324-4176-a703-0d3e07853767.gif)
-
+### Not Authorized
+If a user tries to access a page that they are not allowed to access, they will be redirected to this error page.
+![image](https://user-images.githubusercontent.com/75719373/170869361-3bf1a0e6-593e-4e46-88b4-c2a7fab32a59.png)
