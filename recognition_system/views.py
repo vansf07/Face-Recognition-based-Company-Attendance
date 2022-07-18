@@ -178,7 +178,7 @@ def create_dataset(request, id):
 
 # mark attendance entry time
 def mark_your_attendance_in(request):
-	EYES_CLOSED_SECONDS = 1
+# 	EYES_CLOSED_SECONDS = 1
 	closed_count = 0
 	open_count = 0
 
@@ -351,7 +351,7 @@ def update_attendance_in_db_in(present):
 
 # mark exit attendance
 def mark_your_attendance_out(request):
-	EYES_CLOSED_SECONDS = 1
+# 	EYES_CLOSED_SECONDS = 1
 	closed_count = 0
 	open_count = 0
 
